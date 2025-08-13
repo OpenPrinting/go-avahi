@@ -80,7 +80,7 @@ func zoneName(ifindex IfIndex) string {
 func makeAvahiStringList(txt []string) (*C.AvahiStringList, error) {
 	var ctxt *C.AvahiStringList
 
-	for i := len(txt) - 1; i > 0; i-- {
+	for i := len(txt) - 1; i >= 0; i-- {
 		b := []byte(txt[i])
 
 		prev := ctxt
