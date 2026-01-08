@@ -1,3 +1,10 @@
+// CGo binding for Avahi
+//
+// Copyright (C) 2025 by Prashant Andoriya
+// See LICENSE for license terms and conditions
+//
+// Fuzz tests for Avahi lookup flag string formatting.
+//
 //go:build linux || freebsd
 
 package avahi
@@ -7,6 +14,7 @@ import (
 	"testing"
 )
 
+// FuzzLookupFlagsString fuzzes the LookupFlags.String method
 func FuzzLookupFlagsString(f *testing.F) {
 	// Valid combinations
 	f.Add(int(LookupUseWideArea))
@@ -31,6 +39,7 @@ func FuzzLookupFlagsString(f *testing.F) {
 	})
 }
 
+// FuzzLookupResultFlagsString fuzzes the LookupResultFlags.String method
 func FuzzLookupResultFlagsString(f *testing.F) {
 	// Valid flags
 	f.Add(int(LookupResultCached))
