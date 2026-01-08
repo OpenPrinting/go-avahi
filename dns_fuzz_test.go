@@ -1,3 +1,10 @@
+// CGo binding for Avahi
+//
+// Copyright (C) 2025 by Prashant Andoriya
+// See LICENSE for license terms and conditions
+//
+// Fuzz tests for DNS record decoding functions
+//
 //go:build linux || freebsd
 
 package avahi
@@ -7,6 +14,7 @@ import (
 	"testing"
 )
 
+// FuzzDNSDecodeA fuzzes the DNSDecodeA function
 func FuzzDNSDecodeA(f *testing.F) {
 	// Valid IPv4
 	f.Add([]byte{127, 0, 0, 1})
@@ -30,6 +38,7 @@ func FuzzDNSDecodeA(f *testing.F) {
 	})
 }
 
+// FuzzDNSDecodeAAAA fuzzes the DNSDecodeAAAA function
 func FuzzDNSDecodeAAAA(f *testing.F) {
 	// Valid IPv6 (loopback)
 	f.Add(netip.IPv6Loopback().AsSlice())
@@ -49,6 +58,7 @@ func FuzzDNSDecodeAAAA(f *testing.F) {
 	})
 }
 
+// FuzzDNSDecodeTXT fuzzes the DNSDecodeTXT function
 func FuzzDNSDecodeTXT(f *testing.F) {
 	// Valid TXT records
 	f.Add([]byte{3, 'f', 'o', 'o'})
