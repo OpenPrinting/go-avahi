@@ -29,7 +29,9 @@ func TestProtocolString(t *testing.T) {
 	}
 }
 
-// TestProtocolStringUnknown verifies handling of unknown protocol values
+// TestProtocolStringUnknown verifies that unknown protocol values
+// are converted into a meaningful, non empty string that clearly
+// indicates an unsupported or unexpected protocol
 func TestProtocolStringUnknown(t *testing.T) {
 	p := Protocol(12345)
 	s := p.String()

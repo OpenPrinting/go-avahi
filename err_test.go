@@ -14,7 +14,11 @@ import (
 	"testing"
 )
 
-// TestErrCodeError verifies that Error() returns a prefixed error string
+// TestErrCodeError verifies that ErrCode.Error() returns a non empty,
+//
+// The test intentionally does not assert the exact error message, as
+// the underlying string is provided by the Avahi C library and may
+// vary across versions or environments
 func TestErrCodeError(t *testing.T) {
 	tests := []ErrCode{
 		NoError,
@@ -37,7 +41,7 @@ func TestErrCodeError(t *testing.T) {
 	}
 }
 
-// TestErrCodeImplementsError verifies ErrCode implements the error interface
+// TestErrCodeImplementsError verifies that ErrCode satisfies the built in error interface, allowing it to be used transparently as a Go error value
 func TestErrCodeImplementsError(t *testing.T) {
 	var err error = ErrFailure
 	if err == nil {

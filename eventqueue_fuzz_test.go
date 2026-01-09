@@ -11,7 +11,12 @@ package avahi
 
 import "testing"
 
-// FuzzEventQueueOperations fuzzes push and close operations on eventqueue
+// FuzzEventQueueOperations fuzzes combinations of Push, read,
+// and Close operations to validate that eventqueue:
+//
+//   - never panics
+//   - never deadlocks
+//   - always allows Close() to complete safely
 func FuzzEventQueueOperations(f *testing.F) {
 	// Seed inputs
 	f.Add(0)
@@ -30,18 +35,20 @@ func FuzzEventQueueOperations(f *testing.F) {
 		var q eventqueue[int]
 		q.init()
 
-		// Push values
+		// Push n values into the queue
 		for i := 0; i < n; i++ {
 			q.Push(i)
 		}
 
-		// Drain some values (best effort)
+		// Drain some values on a best effort basis.
+		// Partial reads are intentional and valid.
 		for i := 0; i < n/2; i++ {
 			select {
 			case <-q.Chan():
 			default:
 			}
 		}
+		// Close must always complete without panic or deadlock
 		q.Close()
 	})
 }
