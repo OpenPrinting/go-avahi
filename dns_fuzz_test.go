@@ -79,11 +79,9 @@ func FuzzDNSDecodeTXT(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		txt := DNSDecodeTXT(data)
 
-		if txt != nil {
-			for _, s := range txt {
-				if len(s) == 0 {
-					t.Fatalf("DNSDecodeTXT returned empty string")
-				}
+		for _, s := range txt {
+			if len(s) == 0 {
+				t.Fatalf("DNSDecodeTXT returned empty string")
 			}
 		}
 	})
