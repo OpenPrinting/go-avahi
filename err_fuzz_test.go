@@ -11,7 +11,12 @@ package avahi
 
 import "testing"
 
-// FuzzErrCodeError fuzzes the ErrCode.Error method
+// FuzzErrCodeError fuzzes the ErrCode.Error method to verify that:
+//
+//   - it never panics for arbitrary integer values
+//   - it always returns a non empty string
+//
+// This is especially important because ErrCode.Error() crosses the Go - C boundary and relies on avahi_strerror()
 func FuzzErrCodeError(f *testing.F) {
 	// Valid error codes
 	f.Add(int(NoError))

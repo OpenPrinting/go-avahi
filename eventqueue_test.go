@@ -14,7 +14,8 @@ import (
 	"time"
 )
 
-// TestEventQueueBasic verifies basic push and receive behavior
+// TestEventQueueBasic verifies basic FIFO behavior of eventqueue.
+// Values pushed into the queue must be received in the same order.
 func TestEventQueueBasic(t *testing.T) {
 	var q eventqueue[int]
 	q.init()
@@ -52,6 +53,11 @@ func TestEventQueueClose(t *testing.T) {
 	}
 }
 
+// TestEventQueueCloseEventuallyCloses verifies the liveness guarantee
+// of eventqueue: after Close() is called, the read channel is
+// eventually closed, even if some values were in flight.
+//
+// This test explicitly allows delivery of in flight values.
 func TestEventQueueCloseEventuallyCloses(t *testing.T) {
 	var q eventqueue[int]
 	q.init()
@@ -65,6 +71,8 @@ func TestEventQueueCloseEventuallyCloses(t *testing.T) {
 	select {
 	case _, ok := <-q.Chan():
 		if ok {
+			// Delivery of in flight values is allowed
+			// Ensure the channel closes eventually
 			_, ok = <-q.Chan()
 			if ok {
 				t.Fatalf("expected channel to be closed eventually after Close()")
@@ -75,7 +83,7 @@ func TestEventQueueCloseEventuallyCloses(t *testing.T) {
 	}
 }
 
-// TestEventQueueMultiplePush verifies multiple pushes before reading
+// TestEventQueueMultiplePush verifies that multiple values pushed before reading are delivered in FIFO order without blocking
 func TestEventQueueMultiplePush(t *testing.T) {
 	var q eventqueue[int]
 	q.init()

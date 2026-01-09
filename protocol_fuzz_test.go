@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-// FuzzProtocolString fuzzes the Protocol.String method
+// FuzzProtocolString fuzzes the Protocol.String method using valid, invalid, and extreme integer values
 func FuzzProtocolString(f *testing.F) {
 	// Valid protocol values
 	f.Add(int(ProtocolIP4))
@@ -36,7 +36,7 @@ func FuzzProtocolString(f *testing.F) {
 			t.Fatalf("Protocol.String() returned empty string for value %d", v)
 		}
 
-		// For unknown values, String() should indicate UNKNOWN
+		// For unknown values, String() should clearly indicate that the protocol is unsupported
 		if v != int(ProtocolIP4) && v != int(ProtocolIP6) && v != int(ProtocolUnspec) {
 			if !strings.HasPrefix(s, "UNKNOWN") {
 				t.Fatalf("unexpected string for unknown protocol %d: %q", v, s)

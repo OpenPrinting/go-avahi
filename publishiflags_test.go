@@ -11,12 +11,16 @@ package avahi
 
 import "testing"
 
+// TestPublishFlagsString verifies correct string output for
+// individual flags and common flag combinations.
 func TestPublishFlagsString(t *testing.T) {
 	tests := []struct {
 		flags PublishFlags
 		want  string
 	}{
+		// No flags should produce an empty string
 		{0, ""},
+		// Individual flags
 		{PublishUnique, "unique"},
 		{PublishNoProbe, "no-probe"},
 		{PublishNoAnnounce, "no-announce"},
@@ -26,6 +30,7 @@ func TestPublishFlagsString(t *testing.T) {
 		{PublishUpdate, "update"},
 		{PublishUseWideArea, "use-wan"},
 		{PublishUseMulticast, "use-mdns"},
+		// Common flag combinations
 		{PublishUnique | PublishNoProbe, "unique,no-probe"},
 		{PublishUpdate | PublishUseWideArea, "update,use-wan"},
 	}
