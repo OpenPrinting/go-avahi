@@ -14,11 +14,14 @@ import (
 	"testing"
 )
 
-// TestErrCodeError verifies that ErrCode.Error() returns a non empty,
+// Compile time assertion that ErrCode implements the error interface.
+// This will fail to compile if ErrCode no longer satisfies error.
+var _ error = ErrFailure
+
+// TestErrCodeError verifies that ErrCode.Error() returns a non-empty,
 //
 // The test intentionally does not assert the exact error message, as
-// the underlying string is provided by the Avahi C library and may
-// vary across versions or environments
+// the underlying string is provided by the Avahi C library and may vary across versions or environments.
 func TestErrCodeError(t *testing.T) {
 	tests := []ErrCode{
 		NoError,
@@ -38,13 +41,5 @@ func TestErrCodeError(t *testing.T) {
 		if !strings.HasPrefix(s, "avahi: ") {
 			t.Fatalf("unexpected error prefix for ErrCode(%d): %q", ec, s)
 		}
-	}
-}
-
-// TestErrCodeImplementsError verifies that ErrCode satisfies the built in error interface, allowing it to be used transparently as a Go error value
-func TestErrCodeImplementsError(t *testing.T) {
-	var err error = ErrFailure
-	if err == nil {
-		t.Fatalf("ErrCode does not implement error interface")
 	}
 }
