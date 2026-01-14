@@ -37,8 +37,6 @@ func NewPoller() *Poller {
 //   - nil, error - if context is canceled
 //   - event, nil - if event is available
 //
-// If an event source channel is closed, it is automatically removed
-// from the Poller and polling continues with remaining sources.
 // The returned event is one of the following:
 //   - [*ClientEvent]
 //   - [*DomainBrowserEvent]
@@ -52,6 +50,9 @@ func NewPoller() *Poller {
 // If source is added while Poll is active, it may or may not affect
 // the pending Poll, no guarantees are provided here except for safety
 // guarantees.
+//
+// If an event source channel is closed, it is automatically removed
+// from the Poller and polling continues with remaining sources.
 //
 // Events, received from the same source, are never reordered between
 // each other, but events from different sources may be reordered.
