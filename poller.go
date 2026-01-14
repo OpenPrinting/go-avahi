@@ -37,8 +37,6 @@ func NewPoller() *Poller {
 //   - nil, error - if context is canceled
 //   - event, nil - if event is available
 //
-// If an event source channel is closed, it is automatically removed
-// from the Poller and polling continues with remaining sources.
 // The returned event is one of the following:
 //   - [*ClientEvent]
 //   - [*DomainBrowserEvent]
