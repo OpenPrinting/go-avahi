@@ -34,8 +34,8 @@ func NewPoller() *Poller {
 // Poll waits for the next event from any of registered sources.
 //
 // It returns:
-//   - nil, error - if context is canceled
-//   - event, nil - if event is available
+//   - nil, ctx.Err() - if the context is canceled or its deadline expires
+//   - event, nil    - if an event is available
 //
 // The returned event is one of the following:
 //   - [*ClientEvent]
