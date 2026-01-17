@@ -57,8 +57,9 @@ const (
 func DNSDecodeA(rdata []byte) netip.Addr {
 	var addr netip.Addr
 	if len(rdata) == 4 {
-		addr, _ = netip.AddrFromSlice(rdata)
-		addr = addr.Unmap()
+		if a, ok := netip.AddrFromSlice(rdata); ok {
+			addr = a.Unmap()
+		}
 	}
 	return addr
 }
@@ -70,7 +71,9 @@ func DNSDecodeA(rdata []byte) netip.Addr {
 func DNSDecodeAAAA(rdata []byte) netip.Addr {
 	var addr netip.Addr
 	if len(rdata) == 16 {
-		addr, _ = netip.AddrFromSlice(rdata)
+		if a, ok := netip.AddrFromSlice(rdata); ok {
+			addr = a
+		}
 	}
 	return addr
 }
