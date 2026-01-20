@@ -35,7 +35,7 @@ func NewPoller() *Poller {
 //
 // It returns:
 //   - nil, ctx.Err() - if the context is canceled or its deadline expires
-//   - event, nil    - if an event is available
+//   - event, nil     - if an event is available
 //
 // The returned event is one of the following:
 //   - [*ClientEvent]
