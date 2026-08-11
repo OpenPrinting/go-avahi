@@ -3,3 +3,5 @@ tags
 *.orig
 coverage.out
 go-avahi.test
+
+cmd/go-avahi-browse/go-avahi-browse
