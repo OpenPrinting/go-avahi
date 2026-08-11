@@ -28,11 +28,11 @@ GOLINT	:= $(shell which golint 2>/dev/null)
 .PHONY: vet
 
 # Recursive targets
-all:	subdirs_all do_all
-clean:	subdirs_clean do_clean
-lint:	subdirs_lint do_lint
-test:	subdirs_test do_test
-vet:	subdirs_vet do_vet
+all:    do_all subdirs_all
+clean:  do_clean subdirs_clean
+lint:   do_lint subdirs_lint
+test:   do_test subdirs_test
+vet:    do_vet subdirs_vet
 
 # Non-recursive targets
 cover:	do_cover
