@@ -35,6 +35,10 @@ const (
 	BrowserAllForNow BrowserEvent = C.AVAHI_BROWSER_ALL_FOR_NOW
 
 	// Browsing failed with a error.
+	//
+	// Note, Avahi may send this event just meaning that nothing was
+	// found within a reasonable timeout, and later send BrowserNew for
+	// the same browser. So this event is not very informative.
 	BrowserFailure BrowserEvent = C.AVAHI_BROWSER_FAILURE
 )
 

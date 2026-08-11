@@ -24,6 +24,10 @@ const (
 	ResolverFound ResolverEvent = C.AVAHI_RESOLVER_FOUND
 
 	// Resolving failed due to some reason.
+	//
+	// Note, Avahi may send this event just meaning that resolver
+	// timeout has expired, and later send ResolverFound event for
+	// the same resolver. So this event is not very informative.
 	ResolverFailure ResolverEvent = C.AVAHI_RESOLVER_FAILURE
 )
 
