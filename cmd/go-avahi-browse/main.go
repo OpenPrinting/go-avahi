@@ -100,11 +100,13 @@ func main() {
 			ifname = fmt.Sprintf("%q", iface.Name)
 		}
 
-		fmt.Printf("+ interface %s, type: %s, domain: %s\n",
-			ifname, service.SvcType, service.Domain)
+		fmt.Printf("+ interface %s, domain: %s\n",
+			ifname, service.Domain)
 
-		fmt.Printf("  instance: %q\n", service.InstanceName)
-		fmt.Printf("  hostname: %q\n",
+		fmt.Printf("  svctype:   %q\n", service.SvcType)
+		fmt.Printf("  subtypes:  %q\n", service.SvcSubTypes)
+		fmt.Printf("  instance:  %q\n", service.InstanceName)
+		fmt.Printf("  hostname:  %q\n",
 			strings.Join(service.Hostname, ", "))
 
 		var endpoints []string
