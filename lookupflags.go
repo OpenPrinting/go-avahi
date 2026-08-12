@@ -112,7 +112,7 @@ func (flags LookupResultFlags) String() string {
 	if flags&LookupResultMulticast != 0 {
 		s = append(s, "mdns")
 	}
-	if flags&LookupResultCached != 0 {
+	if flags&LookupResultLocal != 0 {
 		s = append(s, "local")
 	}
 	if flags&LookupResultOurOwn != 0 {
