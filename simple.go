@@ -43,7 +43,8 @@ const (
 type Service struct {
 	IfIdx        IfIndex           // Network interface index
 	Flags        LookupResultFlags // Lookup flags
-	SvcType      string            // Service type
+	SvcType      string            // Service type (e.g. "_ipp._tcp")
+	SvcSubTypes  []string          // Service subtypes ("_universal._sub._ipp._tcp")
 	InstanceName string            // Service instance name
 	Domain       string            // Service domain
 	Hostname     []string          // Service hostname, typically just a single entry
@@ -226,6 +227,10 @@ func SimpleServiceResolver(
 			}
 
 			service.Flags |= evnt.Flags
+			if evnt.SvcSubType != evnt.SvcType {
+				service.SvcSubTypes = appendUnique(service.SvcSubTypes,
+					evnt.SvcSubType)
+			}
 
 			// Create ServiceResolver unless we already have one
 			if resolvers := resolversMap[id]; resolvers == nil {
@@ -320,8 +325,12 @@ func SimpleServiceResolver(
 		return false
 	})
 
-	// Sort Endpoints, just for reproducibility
+	// Sort SvcSubTypes and Endpoints, just for reproducibility
 	for _, service := range services {
+		sort.Slice(service.SvcSubTypes, func(i, j int) bool {
+			return service.SvcSubTypes[i] < service.SvcSubTypes[j]
+		})
+
 		sort.Slice(service.Endpoints, func(i, j int) bool {
 			e1 := service.Endpoints[i]
 			e2 := service.Endpoints[j]
