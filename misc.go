@@ -9,7 +9,10 @@
 
 package avahi
 
-import "slices"
+import (
+	"slices"
+	"strings"
+)
 
 // appendUnique appends elements to the end of slice, ignoring values already
 // present in the slice.
@@ -21,4 +24,16 @@ func appendUnique[T comparable](slice []T, elems ...T) []T {
 	}
 
 	return slice
+}
+
+// isLocalhost tells if hostname is localhost
+func isLocalhost(hostname string) bool {
+	ret := false
+
+	switch strings.ToLower(hostname) {
+	case "localhost", "localhost.localdomain":
+		ret = true
+	}
+
+	return ret
 }
