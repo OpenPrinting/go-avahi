@@ -331,5 +331,20 @@ func SimpleServiceResolver(
 		return false
 	})
 
+	// Sort Endpoints, just for reproducibility
+	for _, service := range services {
+		sort.Slice(service.Endpoints, func(i, j int) bool {
+			e1 := service.Endpoints[i]
+			e2 := service.Endpoints[j]
+
+			cmp := e1.Addr().Compare(e2.Addr())
+			if cmp != 0 {
+				return cmp < 0
+			}
+
+			return e1.Port() < e2.Port()
+		})
+	}
+
 	return services, nil
 }
