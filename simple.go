@@ -105,23 +105,12 @@ func SimpleServiceResolver(
 	defer calcelFunc()
 
 	// We need Client and Poller
-	clnt, err := NewClient(ClientLoopbackWorkarounds)
+	clnt, err := NewClientWait(ctx, ClientLoopbackWorkarounds)
 	if err != nil {
 		return nil, err
 	}
 
 	defer clnt.Close()
-
-	// Wait until ClientStateRunning
-	for {
-		evnt, err := clnt.Get(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if evnt.State == ClientStateRunning {
-			break
-		}
-	}
 
 	// We need a poller
 	poller := NewPoller()

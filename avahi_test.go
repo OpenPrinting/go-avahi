@@ -179,25 +179,13 @@ func TestAvahi(t *testing.T) {
 	}
 
 	// Create a client
-	clnt, err := NewClient(ClientLoopbackWorkarounds)
+	clnt, err := NewClientWait(ctx, ClientLoopbackWorkarounds)
 	if err != nil {
 		t.Errorf("%s", err)
 		return
 	}
 
 	defer clnt.Close()
-
-	// Wait until ClientStateRunning
-	evntClnt, err := clnt.Get(ctx)
-	for evntClnt != nil && evntClnt.State != ClientStateRunning {
-		t.Logf("%#v\n", evntClnt)
-		evntClnt, err = clnt.Get(ctx)
-	}
-
-	if err != nil {
-		t.Errorf("%s", err)
-		return
-	}
 
 	// Create EntryGroup
 	egrp, err := NewEntryGroup(clnt)
@@ -428,7 +416,9 @@ func TestAvahi(t *testing.T) {
 
 	// Close the Client
 	clnt.Close()
-	evntClnt, err = clnt.Get(ctx)
+
+	// No more events should come
+	evntClnt, err := clnt.Get(ctx)
 	for evntClnt != nil {
 		t.Logf("%#v\n", evntClnt)
 		evntClnt, err = clnt.Get(ctx)

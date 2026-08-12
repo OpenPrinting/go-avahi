@@ -112,6 +112,38 @@ func NewClient(flags ClientFlags) (*Client, error) {
 	return clnt, nil
 }
 
+// NewClientWait creates a [Client], like [NewClient], and waits until
+// client reaches [ClientStateRunning] or some failure state.
+//
+// Wait can be canceled via provided [context.Context].
+func NewClientWait(ctx context.Context, flags ClientFlags) (*Client, error) {
+	// Create a client
+	clnt, err := NewClient(flags)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait until ClientStateRunning or error
+	for err == nil {
+		var evnt *ClientEvent
+		evnt, err = clnt.Get(ctx)
+
+		if err != nil {
+			break
+		}
+
+		switch evnt.State {
+		case ClientStateRunning:
+			return clnt, nil
+		case ClientStateFailure:
+			err = evnt.Err
+		}
+	}
+
+	clnt.Close()
+	return nil, err
+}
+
 // Close closes a [Client].
 //
 // Note, double close is safe.
