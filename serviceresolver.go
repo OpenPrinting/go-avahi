@@ -40,6 +40,7 @@ import "C"
 // the discovered services.
 type ServiceResolver struct {
 	clnt          *Client                           // Owning Client
+	flags         LookupFlags                       // Lookup flags from request
 	handle        cgo.Handle                        // Handle to self
 	avahiResolver *C.AvahiServiceResolver           // Underlying object
 	queue         eventqueue[*ServiceResolverEvent] // Event queue
@@ -132,7 +133,7 @@ func NewServiceResolver(
 	flags LookupFlags) (*ServiceResolver, error) {
 
 	// Initialize ServiceResolver structure
-	resolver := &ServiceResolver{clnt: clnt}
+	resolver := &ServiceResolver{clnt: clnt, flags: flags}
 	resolver.handle = cgo.NewHandle(resolver)
 	resolver.queue.init()
 
@@ -254,8 +255,23 @@ func serviceResolverCallback(
 	//
 	// Fix it here.
 	if clnt.hasFlags(ClientLoopbackWorkarounds) && ip.IsLoopback() {
-		evnt.Hostname = "localhost"
-		evnt.Domain = "localdomain"
+		localhost := false
+		switch {
+		case ip.IsLoopback():
+			localhost = true
+		case resolver.flags&LookupNoAddress != 0:
+			// With the LookupNoAddress flag set, we
+			// don't have service IP address to check.
+			// So guess by the interface index.
+			if idx, err := Loopback(); err == nil {
+				localhost = idx == IfIndex(ifidx)
+			}
+		}
+
+		if localhost {
+			evnt.Hostname = "localhost"
+			evnt.Domain = "localdomain"
+		}
 	}
 
 	if evnt.Event == ResolverFailure {
