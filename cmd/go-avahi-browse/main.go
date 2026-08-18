@@ -16,6 +16,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/OpenPrinting/go-avahi"
 )
@@ -40,6 +41,7 @@ func main() {
 	var noaddr bool
 	var notxt bool
 	var ip4, ip6 bool
+	var timeout float64
 
 	flag.CommandLine.SetOutput(os.Stdout)
 
@@ -48,6 +50,9 @@ func main() {
 	flag.BoolVar(&notxt, "notxt", false, "Don't resolve TXT record")
 	flag.BoolVar(&ip4, "4", false, "Use IPv4")
 	flag.BoolVar(&ip6, "6", false, "Use IPv6")
+	flag.Float64Var(&timeout, "T",
+		float64(avahi.DefaultTimeout)/float64(time.Second),
+		"Timeout to browse, in seconds")
 
 	if len(os.Args) == 1 {
 		flag.Usage()
@@ -55,6 +60,15 @@ func main() {
 	}
 
 	flag.Parse()
+
+	// Check options
+	if timeout < 0 {
+		fmt.Fprintf(flag.CommandLine.Output(),
+			"invalid value \"%g\" for flag -T: must be non-negative\n",
+			timeout)
+		flag.Usage()
+		os.Exit(2)
+	}
 
 	// Prepare lookup flags
 	lookupFlags := avahi.LookupFlags(0)
@@ -83,7 +97,7 @@ func main() {
 		flag.Args(),
 		domain,
 		lookupFlags,
-		0,
+		time.Duration(float64(time.Second)*timeout),
 	)
 
 	if err != nil {
