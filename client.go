@@ -112,6 +112,10 @@ func NewClient(flags ClientFlags) (*Client, error) {
 		C.avahi_threaded_poll_free(clnt.threadedPoll)
 		clnt.queue.Close()
 		clnt.handle.Delete()
+
+		// Note: the exact reason for avahi_threaded_poll_start failure
+		// is unknown here (it fails if pthread_create fails), but
+		// ErrNoMemory is a reasonable guess
 		return nil, ErrNoMemory
 	}
 
