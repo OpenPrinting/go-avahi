@@ -35,6 +35,7 @@ import "C"
 // pending readers.
 type Client struct {
 	flags        ClientFlags              // Client creation flags
+	closing      atomic.Bool              // Client.Close called
 	handle       cgo.Handle               // Handle to self
 	avahiClient  *C.AvahiClient           // Underlying AvahiClient
 	threadedPoll *C.AvahiThreadedPoll     // Avahi event loop
@@ -159,9 +160,19 @@ func NewClientWait(ctx context.Context, flags ClientFlags) (*Client, error) {
 // Note, double close is safe.
 func (clnt *Client) Close() {
 	if !clnt.closed.Swap(true) {
-		C.avahi_threaded_poll_stop(clnt.threadedPoll)
+		// Prevent new objects from being created. Setting closing
+		// while holding the event loop lock ensures that concurrent
+		// object creation either completes before this point or
+		// observes closing and panics.
+		clnt.begin(true)
+		clnt.closing.Store(true)
+		clnt.end()
 
+		// Close all children
 		clnt.children.close()
+
+		// Destroy the client
+		C.avahi_threaded_poll_stop(clnt.threadedPoll)
 
 		C.avahi_client_free(clnt.avahiClient)
 		clnt.avahiClient = nil
@@ -210,7 +221,7 @@ func (clnt *Client) Get(ctx context.Context) (*ClientEvent, error) {
 
 // GetVersionString returns avahi-daemon version string
 func (clnt *Client) GetVersionString() string {
-	clnt.begin()
+	clnt.begin(false)
 	defer clnt.end()
 
 	s := C.avahi_client_get_version_string(clnt.avahiClient)
@@ -219,7 +230,7 @@ func (clnt *Client) GetVersionString() string {
 
 // GetHostName returns host name (e.g., "name")
 func (clnt *Client) GetHostName() string {
-	clnt.begin()
+	clnt.begin(false)
 	defer clnt.end()
 
 	s := C.avahi_client_get_host_name(clnt.avahiClient)
@@ -228,7 +239,7 @@ func (clnt *Client) GetHostName() string {
 
 // GetDomainName returns domain name (e.g., "local")
 func (clnt *Client) GetDomainName() string {
-	clnt.begin()
+	clnt.begin(false)
 	defer clnt.end()
 
 	s := C.avahi_client_get_domain_name(clnt.avahiClient)
@@ -237,20 +248,31 @@ func (clnt *Client) GetDomainName() string {
 
 // GetHostFQDN returns FQDN host name (e.g., "name.local")
 func (clnt *Client) GetHostFQDN() string {
-	clnt.begin()
+	clnt.begin(false)
 	defer clnt.end()
 
 	s := C.avahi_client_get_host_name_fqdn(clnt.avahiClient)
 	return C.GoString(s)
 }
 
-// begin locks the Client event loop and returns *C.AvahiClient.
+// begin locks the Client event loop and returns the underlying AvahiClient.
 //
-// All operations that affects underlying AvahiClient must begin
-// with this call.
+// All operations that affect the underlying AvahiClient must begin with
+// this call.
 //
-// Caller MUST call Client.end after end of operation.
-func (clnt *Client) begin() *C.AvahiClient {
+// closing must be true when begin is called as part of closing an existing
+// object, and false for all other operations. This is important for
+// synchronization between Client.Close and other operations.
+//
+// The caller must call end after the operation is complete.
+func (clnt *Client) begin(closing bool) *C.AvahiClient {
+	if !closing && clnt.closing.Load() {
+		// Using a Client after Close is a programmer error, not a
+		// recoverable runtime error, so panic instead of returning
+		// an error.
+		panic("Client used after Client.Close()")
+	}
+
 	C.avahi_threaded_poll_lock(clnt.threadedPoll)
 	return clnt.avahiClient
 }

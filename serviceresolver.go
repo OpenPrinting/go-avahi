@@ -148,7 +148,7 @@ func NewServiceResolver(
 	defer C.free(unsafe.Pointer(cdomain))
 
 	// Create AvahiServiceResolver
-	avahiClient := clnt.begin()
+	avahiClient := clnt.begin(false)
 	defer clnt.end()
 
 	resolver.avahiResolver = C.avahi_service_resolver_new(
@@ -199,7 +199,7 @@ func (resolver *ServiceResolver) Get(ctx context.Context) (
 // It closes the event channel, effectively unblocking pending readers.
 func (resolver *ServiceResolver) Close() {
 	if !resolver.closed.Swap(true) {
-		resolver.clnt.begin()
+		resolver.clnt.begin(true)
 		resolver.clnt.delCloser(resolver)
 		C.avahi_service_resolver_free(resolver.avahiResolver)
 		resolver.avahiResolver = nil

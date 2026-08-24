@@ -89,7 +89,7 @@ func NewAddressResolver(
 	}
 
 	// Create AvahiAddressResolver
-	avahiClient := clnt.begin()
+	avahiClient := clnt.begin(false)
 	defer clnt.end()
 
 	resolver.avahiResolver = C.avahi_address_resolver_new(
@@ -141,7 +141,7 @@ func (resolver *AddressResolver) Get(ctx context.Context) (
 // Note, double close is safe.
 func (resolver *AddressResolver) Close() {
 	if !resolver.closed.Swap(true) {
-		resolver.clnt.begin()
+		resolver.clnt.begin(true)
 		resolver.clnt.delCloser(resolver)
 		C.avahi_address_resolver_free(resolver.avahiResolver)
 		resolver.avahiResolver = nil

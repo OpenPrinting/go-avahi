@@ -120,7 +120,7 @@ func NewServiceBrowser(
 	}
 
 	// Create AvahiServiceBrowser
-	avahiClient := clnt.begin()
+	avahiClient := clnt.begin(false)
 	defer clnt.end()
 
 	browser.avahiBrowser = C.avahi_service_browser_new(
@@ -172,7 +172,7 @@ func (browser *ServiceBrowser) Get(ctx context.Context) (*ServiceBrowserEvent,
 // Note, double close is safe.
 func (browser *ServiceBrowser) Close() {
 	if !browser.closed.Swap(true) {
-		browser.clnt.begin()
+		browser.clnt.begin(true)
 		browser.clnt.delCloser(browser)
 		C.avahi_service_browser_free(browser.avahiBrowser)
 		browser.avahiBrowser = nil

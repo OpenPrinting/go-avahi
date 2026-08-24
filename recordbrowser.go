@@ -96,7 +96,7 @@ func NewRecordBrowser(
 	defer C.free(unsafe.Pointer(cname))
 
 	// Create AvahiRecordBrowser
-	avahiClient := clnt.begin()
+	avahiClient := clnt.begin(false)
 	defer clnt.end()
 
 	browser.avahiBrowser = C.avahi_record_browser_new(
@@ -150,7 +150,7 @@ func (browser *RecordBrowser) Get(ctx context.Context) (*RecordBrowserEvent,
 // Note, double close is safe.
 func (browser *RecordBrowser) Close() {
 	if !browser.closed.Swap(true) {
-		browser.clnt.begin()
+		browser.clnt.begin(true)
 		browser.clnt.delCloser(browser)
 		C.avahi_record_browser_free(browser.avahiBrowser)
 		browser.avahiBrowser = nil

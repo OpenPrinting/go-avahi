@@ -105,7 +105,7 @@ func NewEntryGroup(clnt *Client) (*EntryGroup, error) {
 	egrp.empty.Store(true)
 
 	// Create AvahiEntryGroup
-	avahiClient := clnt.begin()
+	avahiClient := clnt.begin(false)
 	defer clnt.end()
 
 	egrp.avahiEntryGroup = C.avahi_entry_group_new(
@@ -151,7 +151,7 @@ func (egrp *EntryGroup) Get(ctx context.Context) (*EntryGroupEvent, error) {
 // Note, double close is safe
 func (egrp *EntryGroup) Close() {
 	if !egrp.closed.Swap(true) {
-		egrp.clnt.begin()
+		egrp.clnt.begin(true)
 		egrp.clnt.delCloser(egrp)
 		C.avahi_entry_group_free(egrp.avahiEntryGroup)
 		egrp.avahiEntryGroup = nil
@@ -164,7 +164,7 @@ func (egrp *EntryGroup) Close() {
 
 // Commit changes to the EntryGroup.
 func (egrp *EntryGroup) Commit() error {
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_commit(egrp.avahiEntryGroup)
@@ -178,7 +178,7 @@ func (egrp *EntryGroup) Commit() error {
 // Reset (purge) the EntryGroup. This takes effect immediately
 // (without commit).
 func (egrp *EntryGroup) Reset() error {
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_reset(egrp.avahiEntryGroup)
@@ -228,7 +228,7 @@ func (egrp *EntryGroup) AddService(
 	defer C.avahi_string_list_free(ctxt)
 
 	// Call Avahi
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_add_service_strlst(
@@ -276,7 +276,7 @@ func (egrp *EntryGroup) AddServiceSubtype(
 	defer C.free(unsafe.Pointer(csubtype))
 
 	// Call Avahi
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_add_service_subtype(
@@ -326,7 +326,7 @@ func (egrp *EntryGroup) UpdateServiceTxt(
 	defer C.avahi_string_list_free(ctxt)
 
 	// Call Avahi
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_update_service_txt_strlst(
@@ -365,7 +365,7 @@ func (egrp *EntryGroup) AddAddress(
 	defer C.free(unsafe.Pointer(chostname))
 
 	// Call Avahi
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_add_address(
@@ -408,7 +408,7 @@ func (egrp *EntryGroup) AddRecord(
 	defer C.free(cdata)
 
 	// Call Avahi
-	egrp.clnt.begin()
+	egrp.clnt.begin(false)
 	defer egrp.clnt.end()
 
 	rc := C.avahi_entry_group_add_record(
