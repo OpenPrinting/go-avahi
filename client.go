@@ -107,7 +107,13 @@ func NewClient(flags ClientFlags) (*Client, error) {
 	}
 
 	// And now we finally ready to let AvahiClient run.
-	C.avahi_threaded_poll_start(threadedPoll)
+	if C.avahi_threaded_poll_start(threadedPoll) < 0 {
+		C.avahi_client_free(clnt.avahiClient)
+		C.avahi_threaded_poll_free(clnt.threadedPoll)
+		clnt.queue.Close()
+		clnt.handle.Delete()
+		return nil, ErrNoMemory
+	}
 
 	return clnt, nil
 }
