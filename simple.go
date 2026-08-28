@@ -131,7 +131,8 @@ func SimpleServiceResolver(
 
 	svctypes = svctypes[:svcTypesLen]
 
-	// We a ServiceBrowser per each combination of protocol and service type
+	// We need a ServiceBrowser per each combination of protocol
+	// and service type
 	var protos []Protocol
 	if proto == ProtocolUnspec {
 		protos = []Protocol{ProtocolIP4, ProtocolIP6}
@@ -151,7 +152,8 @@ func SimpleServiceResolver(
 				flags&(LookupUseWideArea|LookupUseMulticast))
 
 			if err == ErrNoNetwork {
-				// If some protocol is not available, just ignore for now
+				// If some protocol is not available,
+				// just ignore for now
 				continue
 			}
 
@@ -191,7 +193,8 @@ func SimpleServiceResolver(
 
 		switch evnt := evnt.(type) {
 		case *ServiceBrowserEvent:
-			// Only BrowserNew and BrowserRemove events are informative
+			// Only BrowserNew and BrowserRemove events are
+			// informative
 			if evnt.Event != BrowserNew && evnt.Event != BrowserRemove {
 				break
 			}
@@ -279,8 +282,8 @@ func SimpleServiceResolver(
 
 			service := discovered[id]
 			if service == nil {
-				// Just a spurious event (which is very unlikely
-				// to happen, but just in case...)
+				// Just a spurious event (which is very
+				// unlikely to happen, but just in case...)
 				//
 				// Ignore it
 				break
