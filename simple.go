@@ -221,6 +221,7 @@ func SimpleServiceResolver(
 			if service == nil {
 				service = &Service{
 					IfIdx:        evnt.IfIdx,
+					Flags:        evnt.Flags,
 					SvcType:      evnt.SvcType,
 					InstanceName: evnt.InstanceName,
 					Domain:       evnt.Domain,
@@ -229,7 +230,13 @@ func SimpleServiceResolver(
 				discovered[id] = service
 			}
 
+			// LookupResultCached flag handled the special way.
+			// We only set it when both results are cached
 			service.Flags |= evnt.Flags
+			if evnt.Flags&LookupResultCached == 0 {
+				service.Flags &= ^LookupResultCached
+			}
+
 			if evnt.SvcSubType != evnt.SvcType {
 				service.SvcSubTypes = appendUnique(service.SvcSubTypes,
 					evnt.SvcSubType)
@@ -290,6 +297,12 @@ func SimpleServiceResolver(
 			}
 
 			// Update the service
+			//
+			// LookupResultCached flag handled the special way.
+			// We only set it when both results are cached
+			if evnt.Flags&LookupResultCached == 0 {
+				service.Flags &= ^LookupResultCached
+			}
 			service.Hostname = appendUnique(service.Hostname, evnt.Hostname)
 			if evnt.Port != 0 && evnt.Addr.IsValid() {
 				service.Endpoints = appendUnique(service.Endpoints,
