@@ -330,8 +330,11 @@ func SimpleServiceResolver(
 	return services, nil
 }
 
-// sortServices sorts slice of Service pointers in place.
-// Service.SvcSubTypes and Service.Endpoints are also sorted.
+// sortServices sorts slice of Service pointers in place in
+// the predictable order.
+//
+// Service.SvcSubTypes, Service.Hostnames and Service.Endpoints
+// are also sorted.
 //
 // This function makes order of services and included
 // data predictable and deterministic.
@@ -355,7 +358,7 @@ func sortServices(services []*Service) {
 		return false
 	})
 
-	// Sort SvcSubTypes,Hostnames and Endpoints
+	// Sort SvcSubTypes, Hostnames and Endpoints
 	for _, service := range services {
 		sort.Slice(service.SvcSubTypes, func(i, j int) bool {
 			return service.SvcSubTypes[i] < service.SvcSubTypes[j]
@@ -382,12 +385,29 @@ func sortServices(services []*Service) {
 // SimpleServicePublisher publishes services via DNS-SD (Service Discovery).
 //
 // The function blocks until either the provided context is canceled or an
-// some error occurs. The published services remain available for the
-// duration of the function's execution and are automatically withdrawn before
-// the function returns, regardless of the exit reason.
+// error occurs. Published services remain available for the duration of the
+// function's execution and are automatically withdrawn before the function
+// returns, regardless of the exit reason.
 //
-// The done channel, if not nil, will be signaled (closed) when services
-// are actually published, of before the function exit, whatever is first.
+// Each [Service] in the services slice is interpreted as follows:
+//   - IfIdx specifies the network interface. Use [IfIndexUnspec] to indicate
+//     "all interfaces".
+//   - Flags are ignored.
+//   - SvcType - the service type (e.g., "_http._tcp").
+//   - SvcSubTypes - service subtypes (e.g., "_universal._sub._ipp._tcp").
+//   - InstanceName - the service name. Must be a valid service name:
+//     a UTF-8 string shorter than 63 bytes.
+//   - Domain - the domain to register the service in. Use "" to let the
+//     daemon decide.
+//   - Hostnames - if empty, the daemon automatically inserts the local
+//     hostname. Otherwise, Hostnames[0] specifies the host for this service.
+//   - Endpoints - if empty, the port is assumed to be 0. Otherwise,
+//     Endpoints[0].Port() specifies the service port. The IP address
+//     portion of Endpoints is ignored.
+//   - Txt - the TXT record for the service.
+//
+// The done channel, if not nil, is closed when services are actually
+// published, or before the function exits, whichever occurs first.
 //
 // Important: When publishing multiple services, if an [ErrCollision] occurs,
 // the specific service that caused the collision cannot be identified.

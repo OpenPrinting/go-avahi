@@ -225,7 +225,7 @@ func (egrp *EntryGroup) IsEmpty() bool {
 //     the daemon will automatically insert the local host name.
 //   - Port - IP port (0 is OK and means "this service is advertised
 //     as disabled.
-//     Txt - TXT record of the service.
+//   - Txt - TXT record of the service.
 func (egrp *EntryGroup) AddService(
 	svc *EntryGroupService,
 	flags PublishFlags) error {
