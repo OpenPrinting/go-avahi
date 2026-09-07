@@ -362,3 +362,95 @@ func SimpleServiceResolver(
 
 	return services, nil
 }
+
+// SimpleServicePublisher publishes services via DNS-SD (Service Discovery).
+//
+// The function blocks until either the provided context is canceled or an
+// some error occurs. The published services remain available for the
+// duration of the function's execution and are automatically withdrawn before
+// the function returns, regardless of the exit reason.
+//
+// Important: When publishing multiple services, if an [ErrCollision] occurs,
+// the specific service that caused the collision cannot be identified.
+// Therefore, it is strongly recommended not to mix services with different
+// InstanceName values.
+func SimpleServicePublisher(ctx context.Context,
+	proto Protocol, flags PublishFlags, services []Service) error {
+
+	// If nothing requested to publish, just wait for the
+	// context cancellation
+	if len(services) == 0 {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+
+	// We need a Client
+	clnt, err := NewClientWait(ctx, ClientLoopbackWorkarounds)
+	if err != nil {
+		return err
+	}
+
+	defer clnt.Close()
+
+	// We need an EntryGroup
+	egrp, err := NewEntryGroup(clnt)
+	if err != nil {
+		return err
+	}
+
+	// Populate EntryGroup with services
+	for _, svc := range services {
+		port := 0
+		if len(svc.Endpoints) > 0 {
+			port = int(svc.Endpoints[0].Port())
+		}
+
+		egsvc := EntryGroupService{
+			IfIdx:        svc.IfIdx,
+			Proto:        proto,
+			InstanceName: svc.InstanceName,
+			SvcType:      svc.SvcType,
+			Domain:       svc.Domain,
+			Hostname:     "",
+			Port:         port,
+			Txt:          svc.Txt,
+		}
+
+		// Add the service
+		err := egrp.AddService(&egsvc, flags)
+		if err != nil {
+			return err
+		}
+
+		// Add subtypes, if any
+		for _, subtype := range svc.SvcSubTypes {
+			id := egsvc.Ident()
+			err = egrp.AddServiceSubtype(&id, subtype, flags)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Commit the group to Avahi daemon
+	err = egrp.Commit()
+	if err != nil {
+		return err
+	}
+
+	// Start monitoring the group state
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		case evnt := <-egrp.Chan():
+			switch evnt.State {
+			case EntryGroupStateCollision:
+				return ErrCollision
+			case EntryGroupStateFailure:
+				return evnt.Err
+			}
+		}
+	}
+}
