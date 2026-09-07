@@ -76,6 +76,18 @@ type EntryGroupService struct {
 	Txt          []string // TXT record ("key=value"...)
 }
 
+// Ident extracts the [EntryGroupServiceIdent] from the
+// [EntryGroupService].
+func (svc EntryGroupService) Ident() EntryGroupServiceIdent {
+	return EntryGroupServiceIdent{
+		IfIdx:        svc.IfIdx,
+		Proto:        svc.Proto,
+		InstanceName: svc.InstanceName,
+		SvcType:      svc.SvcType,
+		Domain:       svc.Domain,
+	}
+}
+
 // EntryGroupAddress represents a host address registration.
 type EntryGroupAddress struct {
 	IfIdx    IfIndex    // Network interface index
@@ -197,6 +209,23 @@ func (egrp *EntryGroup) IsEmpty() bool {
 }
 
 // AddService adds a service registration
+//
+// EntryGroupService interpreted as follows:
+//   - IfIdx specifies the network interface. [IfIndexUnspec]
+//     means "all interfaces".
+//   - Proto specifies the network protocol (IPv4/IPv6). Use [ProtocolUnspec]
+//     for both.
+//   - InstanceName - the name for the new service. Must be valid
+//     service name, i.e. a string shorter that 63 bytes and
+//     valid UTF-8.
+//   - SvcType - the service type for the new service (e.g., "_http._tcp).
+//   - Domain - the domain to register the service in. Use "" to
+//     let daemon decide.
+//   - Hostname - the host this service resides on. If set to "",
+//     the daemon will automatically insert the local host name.
+//   - Port - IP port (0 is OK and means "this service is advertised
+//     as disabled.
+//     Txt - TXT record of the service.
 func (egrp *EntryGroup) AddService(
 	svc *EntryGroupService,
 	flags PublishFlags) error {
