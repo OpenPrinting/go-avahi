@@ -121,8 +121,8 @@ func main() {
 		fmt.Printf("  subtypes:  %q\n", service.SvcSubTypes)
 		fmt.Printf("  flags:     %s\n", service.Flags)
 		fmt.Printf("  instance:  %q\n", service.InstanceName)
-		fmt.Printf("  hostname:  %q\n",
-			strings.Join(service.Hostname, ", "))
+		fmt.Printf("  hostnames  %q\n",
+			strings.Join(service.Hostnames, ", "))
 
 		var endpoints []string
 		for _, endpoint := range service.Endpoints {

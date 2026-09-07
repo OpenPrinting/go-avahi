@@ -47,7 +47,7 @@ type Service struct {
 	SvcSubTypes  []string          // Service subtypes ("_universal._sub._ipp._tcp")
 	InstanceName string            // Service instance name
 	Domain       string            // Service domain
-	Hostname     []string          // Service hostname, typically just a single entry
+	Hostnames    []string          // Service hostnames, typically just a single entry
 	Endpoints    []netip.AddrPort  // Service endpoints (host:port)
 	Txt          []string          // TXT record ("key=value"...)
 }
@@ -303,7 +303,7 @@ func SimpleServiceResolver(
 			if evnt.Flags&LookupResultCached == 0 {
 				service.Flags &= ^LookupResultCached
 			}
-			service.Hostname = appendUnique(service.Hostname, evnt.Hostname)
+			service.Hostnames = appendUnique(service.Hostnames, evnt.Hostname)
 			if evnt.Port != 0 && evnt.Addr.IsValid() {
 				service.Endpoints = appendUnique(service.Endpoints,
 					netip.AddrPortFrom(evnt.Addr, evnt.Port))
@@ -315,7 +315,7 @@ func SimpleServiceResolver(
 	// Now convert map of discovered services into the slice
 	var services []*Service
 	for _, service := range discovered {
-		if service.Hostname == nil {
+		if service.Hostnames == nil {
 			// No answer from ServiceResolver.
 			// Skip the Service.
 			continue
@@ -325,6 +325,20 @@ func SimpleServiceResolver(
 	}
 
 	// And sort services, just for reproducibility
+	sortServices(services)
+
+	return services, nil
+}
+
+// sortServices sorts slice of Service pointers in place.
+// Service.SvcSubTypes and Service.Endpoints are also sorted.
+//
+// This function makes order of services and included
+// data predictable and deterministic.
+//
+// This is useful for logging and testing.
+func sortServices(services []*Service) {
+	// Sort services themselves
 	sort.Slice(services, func(i, j int) bool {
 		s1 := services[i]
 		s2 := services[j]
@@ -341,10 +355,14 @@ func SimpleServiceResolver(
 		return false
 	})
 
-	// Sort SvcSubTypes and Endpoints, just for reproducibility
+	// Sort SvcSubTypes,Hostnames and Endpoints
 	for _, service := range services {
 		sort.Slice(service.SvcSubTypes, func(i, j int) bool {
 			return service.SvcSubTypes[i] < service.SvcSubTypes[j]
+		})
+
+		sort.Slice(service.Hostnames, func(i, j int) bool {
+			return service.Hostnames[i] < service.Hostnames[j]
 		})
 
 		sort.Slice(service.Endpoints, func(i, j int) bool {
@@ -359,8 +377,6 @@ func SimpleServiceResolver(
 			return e1.Port() < e2.Port()
 		})
 	}
-
-	return services, nil
 }
 
 // SimpleServicePublisher publishes services via DNS-SD (Service Discovery).
@@ -370,12 +386,23 @@ func SimpleServiceResolver(
 // duration of the function's execution and are automatically withdrawn before
 // the function returns, regardless of the exit reason.
 //
+// The done channel, if not nil, will be signaled (closed) when services
+// are actually published, of before the function exit, whatever is first.
+//
 // Important: When publishing multiple services, if an [ErrCollision] occurs,
 // the specific service that caused the collision cannot be identified.
 // Therefore, it is strongly recommended not to mix services with different
 // InstanceName values.
 func SimpleServicePublisher(ctx context.Context,
-	proto Protocol, flags PublishFlags, services []Service) error {
+	proto Protocol, flags PublishFlags, done chan struct{},
+	services []*Service) error {
+
+	defer func() {
+		if done != nil {
+			close(done)
+			done = nil
+		}
+	}()
 
 	// If nothing requested to publish, just wait for the
 	// context cancellation
@@ -450,6 +477,11 @@ func SimpleServicePublisher(ctx context.Context,
 				return ErrCollision
 			case EntryGroupStateFailure:
 				return evnt.Err
+			case EntryGroupStateEstablished:
+				if done != nil {
+					close(done)
+					done = nil
+				}
 			}
 		}
 	}
