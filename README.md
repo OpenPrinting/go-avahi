@@ -35,7 +35,6 @@ This package has the following key differences:
     IP addresses returned as [netip.AddrPort]
   - It uses a single channel for all events reported by an object,
     so add/remove events cannot be reordered
-  - It survives Avahi restart
   - Integer values, like various flags, DNS class and type and
     so own, have their own type, not a generic int16/int32
   - And the last but not least, it attempts to fill the gaps

@@ -238,15 +238,6 @@ Client has a state that can change dynamically. Changes in the Client
 state are reported as a series of [ClientEvent] events through the
 [Client.Chan] channel or the [Client.Get] convenience wrapper.
 
-The Client itself can survive avahi-daemon (and DBus server) failure
-and restart. If this happens, a [ClientStateFailure] event will be reported,
-followed by [ClientStateConnecting] and finally [ClientStateRunning] when
-the client connection is recovered. However, all Browsers, Resolvers,
-and [EntryGroup] objects owned by the Client will fail (with
-[BrowserFailure]/[ResolverFailure]/[EntryGroupStateFailure] events) and
-will not be restarted automatically. In this case, the application needs
-to close and recreate these objects.
-
 The Client manages the underlying AvahiPoll object (Avahi event loop)
 automatically and doesn't expose it through its interface.
 
