@@ -82,6 +82,10 @@ type Service struct {
 //     service name, hostname, IP addresses, port, and TXT records.
 //   - error: Any error that occurred during discovery or resolution. Timeout
 //     expiration does not return an error.
+//
+// Note, if called with [LookupNoAddress] lookup flag, [Service.Endpoints]
+// still filled with services that advertise non-zero port. The IP
+// part of address at this case returned as IPv4 address 0.0.0.0.
 func SimpleServiceResolver(
 	ctx context.Context,
 	ifidx IfIndex,
@@ -304,9 +308,15 @@ func SimpleServiceResolver(
 				service.Flags &= ^LookupResultCached
 			}
 			service.Hostnames = appendUnique(service.Hostnames, evnt.Hostname)
-			if evnt.Port != 0 && evnt.Addr.IsValid() {
+
+			addr := netip.AddrFrom4([4]byte{})
+			if flags&LookupNoAddress == 0 {
+				addr = evnt.Addr
+			}
+
+			if evnt.Port != 0 && addr.IsValid() {
 				service.Endpoints = appendUnique(service.Endpoints,
-					netip.AddrPortFrom(evnt.Addr, evnt.Port))
+					netip.AddrPortFrom(addr, evnt.Port))
 			}
 			service.Txt = appendUnique(service.Txt, evnt.Txt...)
 		}
