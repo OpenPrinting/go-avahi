@@ -149,72 +149,75 @@ func DomainToUpper(d string) string {
 	return string(buf)
 }
 
-// DomainServiceNameSplit splits service name into instance, service type
-// and domain components:
+// DomainServiceNameSplit splits a full service name into its instance, service
+// type, and domain components.
 //
-//	"Kyocera ECOSYS M2040dn._ipp._tcp.local" -->
-//	    --> ["Kyocera ECOSYS M2040dn", "_ipp._tcp", "local"]
+// It accepts an escaped service name and returns unescaped components:
 //
-// In a case of error it returns empty strings
-func DomainServiceNameSplit(nm string) (instance, svctype, domain string) {
-	// Slice domain name into labels
-	labels := DomainSlice(nm)
-	if len(labels) < 3 {
-		// At least 3 labels are required: instance name
-		// plus service type, which is two labels at least
+//	Kyocera\032ECOSYS\032M2040dn._ipp._tcp.local
+//	    --> "Kyocera ECOSYS M2040dn" + "_ipp._tcp" + "local"
+//
+// This function is the inverse of [DomainServiceNameJoin].
+//
+// When the service name includes a service subtype (e.g.
+// _universal._sub._ipp._tcp), the subtype syntax is strictly checked.
+// It must have the following form, as specified by RFC 6763:
+//
+//	_<subtype>._sub._<service>._<transport>
+func DomainServiceNameSplit(name string) (
+	instance, svctype, domain string, err error) {
+
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	var cinstance [C.AVAHI_LABEL_MAX]C.char
+	var csvctype [C.AVAHI_LABEL_MAX]C.char
+	var cdomain [C.AVAHI_LABEL_MAX]C.char
+
+	rc := C.avahi_service_name_split(cname,
+		&cinstance[0], C.AVAHI_LABEL_MAX,
+		&csvctype[0], C.AVAHI_LABEL_MAX,
+		&cdomain[0], C.AVAHI_LABEL_MAX)
+
+	if rc < 0 {
+		err = ErrCode(rc)
 		return
 	}
 
-	// First label is service name. Then some labels are
-	// service type. We consider every label in sequence, starting
-	// with the underscore character, a part of service type.
-	// The reminder is domain.
-	//
-	// So find range of labels that belong to the service type.
-	svcTypeBeg := 1
-	svcTypeEnd := 1
-
-	for svcTypeEnd < len(labels) &&
-		len(labels[svcTypeEnd]) > 1 && labels[svcTypeEnd][0] == '_' {
-		svcTypeEnd++
-	}
-
-	if svcTypeEnd-svcTypeBeg < 2 {
-		// At least 2 labels required
-		return
-	}
-
-	instance = labels[0]
-	svctype = DomainFrom(labels[svcTypeBeg:svcTypeEnd])
-	domain = DomainFrom(labels[svcTypeEnd:])
+	instance = C.GoString(&cinstance[0])
+	svctype = C.GoString(&csvctype[0])
+	domain = C.GoString(&cdomain[0])
 
 	return
 }
 
-// DomainServiceNameJoin merges two parts of the full service
-// name (instance name, service type and domain name) into
-// the full service name.
+// DomainServiceNameJoin joins the instance name, service type, and domain
+// name into a full service name.
 //
-//   - instance MUST be unescaped label
-//   - svctype and domain MUST be escaped domain names
-//   - instance and svctype MUST NOT be empty
+// It accepts unescaped input and returns an escaped service name:
 //
-// In a case of error it returns empty strings.
-// Strong validation of input strings is not performed here.
-func DomainServiceNameJoin(instance, svctype, domain string) string {
-	// instance and svctype must not be empty
-	if instance == "" || svctype == "" {
-		return ""
+//	"Kyocera ECOSYS M2040dn" + "_ipp._tcp" + "local"
+//	    --> Kyocera\032ECOSYS\032M2040dn._ipp._tcp.local
+//
+// This function is the inverse of [DomainServiceNameSplit].
+func DomainServiceNameJoin(instance, svctype, domain string) (string, error) {
+	cinstance := C.CString(instance)
+	defer C.free(unsafe.Pointer(cinstance))
+
+	csvctype := C.CString(svctype)
+	defer C.free(unsafe.Pointer(csvctype))
+
+	cdomain := C.CString(domain)
+	defer C.free(unsafe.Pointer(cdomain))
+
+	var buf [C.AVAHI_DOMAIN_NAME_MAX]C.char
+
+	rc := C.avahi_service_name_join(&buf[0], C.AVAHI_DOMAIN_NAME_MAX,
+		cinstance, csvctype, cdomain)
+
+	if rc < 0 {
+		return "", ErrCode(rc)
 	}
 
-	// Escape instance name
-	instance = DomainFrom([]string{instance})
-
-	// Join parts together
-	out := instance + "." + svctype
-	if domain != "" {
-		out += "." + domain
-	}
-
-	return out
+	return C.GoString(&buf[0]), nil
 }
