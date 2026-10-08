@@ -234,7 +234,7 @@ func TestDomainServiceNameSplit(t *testing.T) {
 	tests := []testData{
 		{
 			// Full name
-			input:    `Kyocera ECOSYS M2040dn._ipp._tcp.local`,
+			input:    `Kyocera\032ECOSYS\032M2040dn._ipp._tcp.local`,
 			instance: "Kyocera ECOSYS M2040dn",
 			svctype:  "_ipp._tcp",
 			domain:   "local",
@@ -242,7 +242,7 @@ func TestDomainServiceNameSplit(t *testing.T) {
 
 		{
 			// Missed domain
-			input:    `Kyocera ECOSYS M2040dn._ipp._tcp`,
+			input:    `Kyocera\032ECOSYS\032M2040dn._ipp._tcp`,
 			instance: "Kyocera ECOSYS M2040dn",
 			svctype:  "_ipp._tcp",
 			domain:   "",
@@ -250,7 +250,7 @@ func TestDomainServiceNameSplit(t *testing.T) {
 
 		{
 			// Long domain
-			input:    `Kyocera ECOSYS M2040dn._ipp._tcp.example.com`,
+			input:    `Kyocera\032ECOSYS\032M2040dn._ipp._tcp.example.com`,
 			instance: "Kyocera ECOSYS M2040dn",
 			svctype:  "_ipp._tcp",
 			domain:   "example.com",
@@ -258,9 +258,10 @@ func TestDomainServiceNameSplit(t *testing.T) {
 
 		{
 			// Service type with subtype
-			input:    `Kyocera ECOSYS M2040dn._subtype._ipp._tcp.local`,
+			//input:    `Kyocera\032ECOSYS\032M2040dn._subtype._ipp._tcp.local`,
+			input:    `Kyocera\032ECOSYS\032M2040dn._universal._sub._ipp._tcp.local`,
 			instance: "Kyocera ECOSYS M2040dn",
-			svctype:  "_subtype._ipp._tcp",
+			svctype:  "_universal._sub._ipp._tcp",
 			domain:   "local",
 		},
 
@@ -281,18 +282,24 @@ func TestDomainServiceNameSplit(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		instance, svctype, domain := DomainServiceNameSplit(test.input)
+	for i, test := range tests {
+		instance, svctype, domain, err := DomainServiceNameSplit(test.input)
 		if instance != test.instance ||
 			svctype != test.svctype ||
 			domain != test.domain {
 
-			t.Errorf("%q:\n"+
+			errname := "<nil>"
+			if err != nil {
+				errname = err.Error()
+			}
+
+			t.Errorf("%q (test %d):\n"+
 				"expected: %q %q %q\n"+
-				"present:  %q %q %q\n",
-				test.input,
+				"present:  %q %q %q\n"+
+				"error:    %s",
+				test.input, i,
 				test.instance, test.svctype, test.domain,
-				instance, svctype, domain)
+				instance, svctype, domain, errname)
 		}
 	}
 }
@@ -310,7 +317,7 @@ func TestDomainServiceNameJoin(t *testing.T) {
 			instance: "Kyocera ECOSYS M2040dn",
 			svctype:  "_ipp._tcp",
 			domain:   "local",
-			output:   `Kyocera ECOSYS M2040dn._ipp._tcp.local`,
+			output:   `Kyocera\032ECOSYS\032M2040dn._ipp._tcp.local`,
 		},
 
 		{
@@ -334,12 +341,12 @@ func TestDomainServiceNameJoin(t *testing.T) {
 			instance: "Kyocera ECOSYS M2040dn",
 			svctype:  "_ipp._tcp",
 			domain:   "",
-			output:   `Kyocera ECOSYS M2040dn._ipp._tcp`,
+			output:   `Kyocera\032ECOSYS\032M2040dn._ipp._tcp.`,
 		},
 	}
 
 	for _, test := range tests {
-		output := DomainServiceNameJoin(test.instance,
+		output, _ := DomainServiceNameJoin(test.instance,
 			test.svctype, test.domain)
 
 		if output != test.output {
