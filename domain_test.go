@@ -358,3 +358,38 @@ func TestDomainServiceNameJoin(t *testing.T) {
 		}
 	}
 }
+
+// TestDomainServiceNameUnescape tests DomainServiceNameUnescape function
+func TestDomainServiceNameUnescape(t *testing.T) {
+	type testData struct {
+		in  string
+		out string
+	}
+
+	tests := []testData{
+		{
+			`Kyocera\032ECOSYS\032M2040dn._ipp._tcp.local`,
+			`Kyocera ECOSYS M2040dn._ipp._tcp.local`,
+		},
+
+		{
+			`Xerox\040R\041\032B235\032MFP._printer._tcp.local`,
+			`Xerox(R) B235 MFP._printer._tcp.local`,
+		},
+
+		{
+			`\a\b\c`,
+			`abc`,
+		},
+	}
+
+	for _, test := range tests {
+		out := DomainServiceNameUnescape(test.in)
+		if out != test.out {
+			t.Errorf("%q: DomainServiceNameUnescape mismatch:\n"+
+				"expected: %q\n"+
+				"present:  %q\n",
+				test.in, test.out, out)
+		}
+	}
+}

@@ -13,6 +13,7 @@ package avahi
 // #include <avahi-common/domain.h>
 import "C"
 import (
+	"strings"
 	"unsafe"
 )
 
@@ -220,4 +221,52 @@ func DomainServiceNameJoin(instance, svctype, domain string) (string, error) {
 	}
 
 	return C.GoString(&buf[0]), nil
+}
+
+// DomainServiceNameUnescape unescapes Domain service name:
+//
+//	Kyocera\032ECOSYS\032M2040dn._ipp._tcp.local
+//	    --> "Kyocera ECOSYS M2040dn._ipp._tcp.local"
+//
+// This function is not as strict as Avahi's avahi_unescape_label.
+// It interprets input as follows:
+//
+//	\NNN - replaced with byte with decimal value NNN
+//	\X   - replaced with X, if X is not digit
+func DomainServiceNameUnescape(name string) string {
+	b := strings.Builder{}
+
+	bytes := []byte(name)
+	for len(bytes) > 0 {
+		if bytes[0] == '\\' {
+			switch {
+			case len(bytes) >= 4 &&
+				isdigit(bytes[1]) &&
+				isdigit(bytes[2]) &&
+				isdigit(bytes[3]):
+
+				c := 100 * int(bytes[1]-'0')
+				c += 10 * int(bytes[2]-'0')
+				c += int(bytes[3] - '0')
+
+				if c <= 255 {
+					b.WriteByte(byte(c))
+				}
+
+				bytes = bytes[4:]
+
+			case len(bytes) >= 2:
+				b.WriteByte(bytes[1])
+				bytes = bytes[2:]
+
+			default:
+				bytes = bytes[1:]
+			}
+		} else {
+			b.WriteByte(bytes[0])
+			bytes = bytes[1:]
+		}
+	}
+
+	return b.String()
 }

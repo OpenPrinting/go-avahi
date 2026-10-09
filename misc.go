@@ -37,3 +37,8 @@ func isLocalhost(hostname string) bool {
 
 	return ret
 }
+
+// isdigit reports if c is ASCII digit
+func isdigit(c byte) bool {
+	return '0' <= c && c <= '9'
+}
