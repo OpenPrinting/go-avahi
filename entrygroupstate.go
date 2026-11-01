@@ -33,6 +33,10 @@ const (
 	EntryGroupStateCollision EntryGroupState = C.AVAHI_ENTRY_GROUP_COLLISION
 
 	// Some kind of failure has been detected, the entries has been withdrawn.
+	//
+	// Note, this event is not guaranteed to come if Avahi connection
+	// lost. This is important to monitor [Client] for possible
+	// [ClientEvent] with State==[ClientStateFailure].
 	EntryGroupStateFailure EntryGroupState = C.AVAHI_ENTRY_GROUP_FAILURE
 )
 

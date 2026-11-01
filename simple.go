@@ -501,6 +501,12 @@ func SimpleServicePublisher(ctx context.Context,
 		case <-ctx.Done():
 			return ctx.Err()
 
+		case evnt := <-clnt.Chan():
+			switch evnt.State {
+			case ClientStateFailure:
+				return evnt.Err
+			}
+
 		case evnt := <-egrp.Chan():
 			switch evnt.State {
 			case EntryGroupStateCollision:
