@@ -13,6 +13,7 @@ import (
 	"context"
 	"net/netip"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -50,6 +51,28 @@ type Service struct {
 	Hostnames    []string          // Service hostnames, typically just a single entry
 	Endpoints    []netip.AddrPort  // Service endpoints (host:port)
 	Txt          []string          // TXT record ("key=value"...)
+}
+
+// TXTGet returns the value of the TXT record for the given key.
+// It returns an empty string if the key does not exist.
+//
+// This is a simplified version of the [Service.TXTLookup] function.
+func (svc *Service) TXTGet(key string) string {
+	v, _ := svc.TXTLookup(key)
+	return v
+}
+
+// TXTLookup returns the value of the TXT record with the given key
+// and a boolean indicating whether the key was found.
+func (svc *Service) TXTLookup(key string) (string, bool) {
+	for _, t := range svc.Txt {
+		k, v, _ := strings.Cut(t, "=")
+		if strcaseequal(key, k) {
+			return v, true
+		}
+	}
+
+	return "", false
 }
 
 // SimpleServiceResolver provides a simple synchronous API for discovering and
